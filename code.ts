@@ -2,14 +2,36 @@ const SIZE = [24, 16, 12];
 const select = figma.currentPage.selection;
 const selectedVectors: any = [];
 
-function selectAllVector(component: any) {
-  if (component.type === "VECTOR") {
-    console.log(component.children);
-    for (const child of component.children) {
-      selectedVectors.push(child);
+function selectAllVector(frame: FrameNode) {
+  for (const node of frame.children) {
+    if (
+      node.type === "VECTOR" ||
+      node.type === "RECTANGLE" ||
+      node.type === "ELLIPSE"
+    ) {
+      console.log(node);
+      const rect = node as RectangleNode;
+      if (rect.strokeStyleId && rect.fillStyleId) {
+        const fillStyleId = rect.fillStyleId;
+        const strokeStyleId = rect.strokeStyleId;
+        const fills = rect.fills;
+        const strokes = rect.strokes;
+        rect.fills = [];
+        const outline = figma.createVector();
+        outline.name = "Outline";
+        outline.vectorPaths = rect.vectorPath;
+        outline.x = rect.x;
+        outline.y = rect.y;
+        outline.resize(rect.width, rect.height);
+
+        rect.parent?.appendChild(outline);
+        rect.remove();
+      }
+      selectedVectors.push(node);
     }
   }
-  figma.currentPage.selection = selectedVectors;
+  // const flatten = figma.flatten(selectedVectors);
+  // flatten.name = "Vector";
 }
 
 function iconScaling() {
@@ -23,28 +45,32 @@ function iconScaling() {
       const component = componentSet.findOne(
         (node) => node.type === "COMPONENT"
       ) as ComponentNode;
-      selectAllVector(component);
-      // const vector = component.findOne(
-      //   (node) => node.type === "VECTOR"
-      // ) as VectorNode;
-      // vector.constraints = {
-      //   horizontal: "SCALE",
-      //   vertical: "SCALE",
-      // };
-      // for (const size of SIZE) {
-      //   const clone = component.clone() as ComponentNode;
-      //   const grid = clone.findOne(
-      //     (node) => node.type === "INSTANCE" && node.name === "grid-icon"
-      //   ) as SceneNode;
-      //   grid?.remove();
-      //   clone.resize(size, size);
-      //   componentSet.appendChild(clone);
-      // }
+      const frame = componentSet.findOne(
+        (node) => node.type === "COMPONENT"
+      ) as FrameNode;
+      selectAllVector(frame);
+      const vector = component.findOne(
+        (node) => node.type === "VECTOR"
+      ) as VectorNode;
+      vector.constraints = {
+        horizontal: "SCALE",
+        vertical: "SCALE",
+      };
+      for (const size of SIZE) {
+        const clone = component.clone() as ComponentNode;
+        const grid = clone.findOne(
+          (node) => node.type === "INSTANCE" && node.name === "grid-icon"
+        ) as SceneNode;
+        grid?.remove();
+        clone.resize(size, size);
+        clone.name = "Size=" + size;
+        componentSet.appendChild(clone);
+      }
     } else {
       figma.closePlugin("Please select a component set");
     }
   }
-  figma.closePlugin();
+  // figma.closePlugin();
 }
 
 iconScaling();
