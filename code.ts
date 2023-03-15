@@ -9,29 +9,19 @@ function selectAllVector(frame: FrameNode) {
       node.type === "RECTANGLE" ||
       node.type === "ELLIPSE"
     ) {
-      console.log(node);
-      const rect = node as RectangleNode;
-      if (rect.strokeStyleId && rect.fillStyleId) {
-        const fillStyleId = rect.fillStyleId;
-        const strokeStyleId = rect.strokeStyleId;
-        const fills = rect.fills;
-        const strokes = rect.strokes;
-        rect.fills = [];
-        const outline = figma.createVector();
-        outline.name = "Outline";
-        outline.vectorPaths = rect.vectorPath;
-        outline.x = rect.x;
-        outline.y = rect.y;
-        outline.resize(rect.width, rect.height);
-
-        rect.parent?.appendChild(outline);
-        rect.remove();
+      if (node.strokeStyleId && node.fillStyleId) {
+        node.fills = [];
+        const stroke = node.outlineStroke() as VectorNode;
+        node.remove();
+        frame.appendChild(stroke);
+        selectedVectors.push(stroke);
+      } else {
+        selectedVectors.push(node);
       }
-      selectedVectors.push(node);
     }
   }
-  // const flatten = figma.flatten(selectedVectors);
-  // flatten.name = "Vector";
+  const flatten = figma.flatten(selectedVectors);
+  flatten.name = "Vector";
 }
 
 function iconScaling() {
@@ -70,7 +60,7 @@ function iconScaling() {
       figma.closePlugin("Please select a component set");
     }
   }
-  // figma.closePlugin();
+  figma.closePlugin();
 }
 
 iconScaling();
