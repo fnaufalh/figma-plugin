@@ -7,24 +7,44 @@ function selectAllVector(frame: FrameNode) {
     if (
       node.type === "VECTOR" ||
       node.type === "RECTANGLE" ||
-      node.type === "ELLIPSE"
+      node.type === "ELLIPSE" ||
+      node.type === "BOOLEAN_OPERATION" ||
+      node.type === "LINE"
     ) {
-      if (node.strokeStyleId && node.fillStyleId) {
-        node.fills = [];
-        const stroke = node.outlineStroke() as VectorNode;
-        node.remove();
-        frame.appendChild(stroke);
-        selectedVectors.push(stroke);
-      } else {
-        selectedVectors.push(node);
+      switch (node.type) {
+        case "BOOLEAN_OPERATION":
+          // const booleanOperation = node as BooleanOperationNode;
+          // booleanOperation.flatten();
+
+          break;
+        case "VECTOR":
+        case "RECTANGLE":
+        case "ELLIPSE":
+        case "LINE":
+        default:
+          if (node.strokeStyleId && node.fillStyleId) {
+            node.fills = [];
+            const stroke = node.outlineStroke() as VectorNode;
+            node.remove();
+            frame.appendChild(stroke);
+            selectedVectors.push(stroke);
+          } else {
+            selectedVectors.push(node);
+          }
+          break;
       }
     }
+    const flatten = figma.flatten(selectedVectors);
+    flatten.name = "Vector";
   }
-  const flatten = figma.flatten(selectedVectors);
-  flatten.name = "Vector";
 }
 
 function iconScaling() {
+  if ("getPluginData" in figma.clientStorage) {
+    figma.closePlugin("v2");
+  } else {
+    figma.closePlugin("v1");
+  }
   for (const node of select) {
     if (node.type === "COMPONENT_SET") {
       const componentSet = select.find(
