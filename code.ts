@@ -1,4 +1,4 @@
-const SIZE = [24, 16, 12];
+const SIZE = [24];
 const select = figma.currentPage.selection;
 const selectedVectors: any = [];
 
@@ -16,20 +16,16 @@ function outlining(node: any, frame: FrameNode) {
     node.remove();
     frame.appendChild(stroke);
     node = stroke;
-  } else if (node.type === "LINE") {
-    console.log("out");
   }
-  console.log(node.type);
   selectedVectors.push(node);
 }
-function selectAllVector(frame: FrameNode) {
+function selectAllVector(component: ComponentNode, frame: FrameNode) {
   for (const node of frame.children) {
     if (
       node.type === "VECTOR" ||
       node.type === "RECTANGLE" ||
-      node.type === "ELLIPSE" ||
+      node.type === "ELLIPSE"
       // node.type === "BOOLEAN_OPERATION" ||
-      node.type === "LINE"
     ) {
       switch (node.type) {
         // case "BOOLEAN_OPERATION":
@@ -37,7 +33,6 @@ function selectAllVector(frame: FrameNode) {
         // booleanOperation.flatten();
 
         // break;
-        case "LINE":
         case "VECTOR":
         case "RECTANGLE":
         case "ELLIPSE":
@@ -47,8 +42,24 @@ function selectAllVector(frame: FrameNode) {
       }
     }
   }
-  // const flatten = figma.flatten(selectedVectors);
-  // flatten.name = "Vector";
+  const flatten = figma.flatten(selectedVectors);
+  flatten.name = "Vector";
+  const vector = component.findOne(
+    (node) => node.type === "VECTOR"
+  ) as VectorNode;
+  vector.constraints = {
+    horizontal: "SCALE",
+    vertical: "SCALE",
+  };
+}
+
+function resizeIt(component: ComponentNode, componentSet: ComponentSetNode) {
+  for (const size of SIZE) {
+    const clone = component.clone() as ComponentNode;
+    clone.resize(size, size);
+    clone.name = "Size=" + size;
+    componentSet.appendChild(clone);
+  }
 }
 
 function iconScaling() {
@@ -66,20 +77,8 @@ function iconScaling() {
       const frame = componentSet.findOne(
         (node) => node.type === "COMPONENT"
       ) as FrameNode;
-      selectAllVector(frame);
-      const vector = component.findOne(
-        (node) => node.type === "VECTOR"
-      ) as VectorNode;
-      vector.constraints = {
-        horizontal: "SCALE",
-        vertical: "SCALE",
-      };
-      for (const size of SIZE) {
-        const clone = component.clone() as ComponentNode;
-        clone.resize(size, size);
-        clone.name = "Size=" + size;
-        componentSet.appendChild(clone);
-      }
+      selectAllVector(component, frame);
+      resizeIt(component, componentSet);
     } else {
       figma.closePlugin("Please select a component set");
     }
